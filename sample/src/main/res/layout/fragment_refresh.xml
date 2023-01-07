@@ -52,6 +52,39 @@
             android:textColor="@color/textSecond"
             android:textSize="12dp" />
 
+        <RadioGroup
+            android:id="@+id/radioGroup"
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <RadioButton
+                android:id="@+id/rb1"
+                android:text="1"
+                android:layout_weight="1"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"/>
+
+            <RadioButton
+                android:id="@+id/rb2"
+                android:text="2"
+                android:layout_weight="1"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"/>
+        </RadioGroup>
+
+        <EditText
+            android:id="@+id/editText"
+            android:hint="Search key"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+        <Button
+            android:id="@+id/btnSearch"
+            android:text="search"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
         <com.drake.brv.PageRefreshLayout
             android:id="@+id/page"
             android:layout_width="match_parent"

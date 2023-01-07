@@ -23,50 +23,77 @@ import com.drake.brv.sample.R
 import com.drake.brv.sample.databinding.FragmentRefreshBinding
 import com.drake.brv.sample.model.Model
 import com.drake.brv.sample.model.TwoSpanModel
-import com.drake.brv.utils.linear
-import com.drake.brv.utils.setup
+import com.drake.brv.utils.*
 import com.drake.engine.base.EngineFragment
+import com.drake.engine.databinding.bind
 import com.drake.tooltip.toast
 
 
 class RefreshFragment : EngineFragment<FragmentRefreshBinding>(R.layout.fragment_refresh) {
 
-    private val total = 2
+    private var curType = 1
+    private var page = 1
 
     override fun initView() {
         setHasOptionsMenu(true)
+
+        binding.radioGroup.setOnCheckedChangeListener { group, checkedId ->
+            if (checkedId == R.id.rb1) {
+                curType = 1
+                binding.page.refresh()
+            } else if (checkedId == R.id.rb2) {
+                curType = 2
+                binding.page.refresh()
+            }
+        }
+
+        binding.btnSearch.setOnClickListener {
+            binding.page.refresh()
+        }
 
         binding.rv.linear().setup {
             addType<Model>(R.layout.item_multi_type_simple)
             addType<TwoSpanModel>(R.layout.item_multi_type_two_span)
         }
 
-        binding.page.onRefresh {
-
-            val runnable = { // 模拟网络请求, 创建假的数据集
+        binding.page
+            .onRefresh {
                 val data = getData()
-                addData(data) {
-                    index < total // 判断是否有更多页
-                }
-
-                // addData(data, binding.rv.bindingAdapter, isEmpty = {
-                //     true // 此处判断是否存在下一页
-                // }, hasMore = {
-                //     false // 此处判断是否显示空布局
-                // })
+                binding.rv.models = data
+                binding.page.showContent(data.size >= 10)
             }
-            postDelayed(runnable, 2000)
+            .onLoadMore {
+                val data = getData(false)
+                binding.rv.addModels(data)
+                binding.page.showContent(data.size >= 10)
+            }
 
-            toast("右上角菜单可以操作刷新结果, 默认2s结束")
-        }.autoRefresh()
+        binding.page.refresh()
     }
 
-    private fun getData(): List<Any> {
+    private fun getData(refresh: Boolean = true): List<Any> {
+        if (refresh) {
+            page = 1
+        } else {
+            page ++
+        }
+        val searchKey = binding.editText.text.toString()
+        return getDataByPage(page, searchKey, curType)
+    }
+
+    private fun getDataByPage(page: Int, search: String = "", type: Int = 1): List<Any> {
+        toast("获取第 $page 页数据, 搜索 >> $search")
         return mutableListOf<Any>().apply {
-            for (i in 0..9) {
-                when (i) {
-                    1, 2 -> add(TwoSpanModel())
-                    else -> add(Model())
+            if (type == 1) {
+                for (i in 0..9) {
+                    when (i) {
+                        1, 2 -> add(TwoSpanModel())
+                        else -> add(Model())
+                    }
+                }
+            } else {
+                repeat(4) {
+                    add(Model())
                 }
             }
         }
