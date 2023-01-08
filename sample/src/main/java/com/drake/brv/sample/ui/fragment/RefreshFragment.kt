@@ -19,6 +19,7 @@ package com.drake.brv.sample.ui.fragment
 import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
+import androidx.lifecycle.lifecycleScope
 import com.drake.brv.sample.R
 import com.drake.brv.sample.databinding.FragmentRefreshBinding
 import com.drake.brv.sample.model.Model
@@ -27,12 +28,16 @@ import com.drake.brv.utils.*
 import com.drake.engine.base.EngineFragment
 import com.drake.engine.databinding.bind
 import com.drake.tooltip.toast
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
 
 class RefreshFragment : EngineFragment<FragmentRefreshBinding>(R.layout.fragment_refresh) {
 
     private var curType = 1
     private var page = 1
+    private val simpleFlow = MutableSharedFlow<List<Any>>(replay = 1)
 
     override fun initView() {
         setHasOptionsMenu(true)
@@ -58,27 +63,36 @@ class RefreshFragment : EngineFragment<FragmentRefreshBinding>(R.layout.fragment
 
         binding.page
             .onRefresh {
-                val data = getData()
-                binding.rv.models = data
-                binding.page.showContent(data.size >= 10)
+                getData()
             }
             .onLoadMore {
-                val data = getData(false)
-                binding.rv.addModels(data)
-                binding.page.showContent(data.size >= 10)
+                getData(false)
+            }
+
+        lifecycleScope
+            .launch {
+                simpleFlow.collectLatest {
+                    if (page == 1) {
+                        binding.rv.models = it
+                    } else {
+                        binding.rv.addModels(it)
+                    }
+                    binding.page.showContent(it.size >= 10)
+                }
             }
 
         binding.page.refresh()
     }
 
-    private fun getData(refresh: Boolean = true): List<Any> {
+    private fun getData(refresh: Boolean = true) {
         if (refresh) {
             page = 1
         } else {
             page ++
         }
         val searchKey = binding.editText.text.toString()
-        return getDataByPage(page, searchKey, curType)
+        val data = getDataByPage(page, searchKey, curType)
+        simpleFlow.tryEmit(data)
     }
 
     private fun getDataByPage(page: Int, search: String = "", type: Int = 1): List<Any> {
